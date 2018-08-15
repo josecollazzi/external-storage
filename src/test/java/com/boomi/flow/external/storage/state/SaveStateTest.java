@@ -1,12 +1,14 @@
 package com.boomi.flow.external.storage.state;
 
 import com.boomi.flow.external.storage.BaseTest;
+import com.boomi.flow.external.storage.Migrator;
 import com.boomi.flow.external.storage.jdbi.UuidArgumentFactory;
 import com.boomi.flow.external.storage.state.utils.CommonStateTest;
 import com.boomi.flow.external.storage.state.utils.StateRequest;
 import com.boomi.flow.external.storage.states.State;
 import com.google.common.io.Resources;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jdbi.v3.core.Jdbi;
 import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
@@ -36,6 +38,12 @@ import java.util.UUID;
 public class SaveStateTest extends BaseTest {
     @Test
     public void testUpdateState() throws URISyntaxException, IOException, JoseException, JSONException {
+        String schema = "updatestate";
+        createSchema(schema);
+        Migrator.executeMigrations(dataSource(schema));
+        Jdbi jdbi = Jdbi.create(dataSource(schema));
+        var server = startServer(jdbi);
+
         OffsetDateTime createdAt = OffsetDateTime.now();
         OffsetDateTime updatedAt = OffsetDateTime.now().plusDays(1);
         String oldContent = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/state.json").toURI())));
@@ -120,11 +128,17 @@ public class SaveStateTest extends BaseTest {
         response.close();
 
         CommonStateTest.cleanSates(jdbi);
+        server.stop();
+        deleteSchema(schema);
     }
-
 
     @Test
     public void testInsertState() throws URISyntaxException, IOException, JoseException, JSONException {
+        String schema = "insertstate";
+        createSchema(schema);
+        Migrator.executeMigrations(dataSource(schema));
+        Jdbi jdbi = Jdbi.create(dataSource(schema));
+        var server = startServer(jdbi);
 
         OffsetDateTime createdAd = OffsetDateTime.now();
         OffsetDateTime updatedAt = OffsetDateTime.now().plusDays(1);
@@ -209,6 +223,8 @@ public class SaveStateTest extends BaseTest {
         response.close();
 
         CommonStateTest.cleanSates(jdbi);
+        server.stop();
+        deleteSchema(schema);
     }
 
     private StateRequest[] createSignedEncryptedBody(UUID id, UUID tenantId, UUID parentId, UUID flowId, UUID flowVersionId,
@@ -278,6 +294,7 @@ public class SaveStateTest extends BaseTest {
 
     @Test
     public void testNotValidSignature() throws IOException, JoseException, URISyntaxException {
+        var server = startServer();
         String url = testUrl("/states/4b8b27d3-e4f3-4a78-8822-12476582af8a");
 
         Response response =  new ResteasyClientBuilder().build().target(url)
@@ -290,10 +307,12 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(401, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testEmptySignature() throws JoseException, IOException, URISyntaxException {
+        var server = startServer();
         String url = testUrl("/states/4b8b27d3-e4f3-4a78-8822-12476582af8a");
 
         Response response =  new ResteasyClientBuilder().build().target(url)
@@ -305,10 +324,12 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(401, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testNonPlatformKey() throws JoseException, IOException, URISyntaxException {
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         String url = testUrl("/states/918f5a24-290e-4659-9cd6-c8d95aee92c6");
 
@@ -321,10 +342,12 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(400, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testNonReceiverKey() throws JoseException, IOException, URISyntaxException {
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         String url = testUrl("/states/918f5a24-290e-4659-9cd6-c8d95aee92c6");
 
@@ -337,6 +360,7 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(400, response.getStatus());
         response.close();
+        server.stop();
     }
 
     private Entity<String> validEntity() throws IOException, JoseException, URISyntaxException {

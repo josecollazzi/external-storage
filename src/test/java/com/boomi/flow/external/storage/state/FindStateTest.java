@@ -1,9 +1,11 @@
 package com.boomi.flow.external.storage.state;
 
 import com.boomi.flow.external.storage.BaseTest;
+import com.boomi.flow.external.storage.Migrator;
 import com.boomi.flow.external.storage.state.utils.CommonStateTest;
 import com.google.common.io.Resources;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jdbi.v3.core.Jdbi;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
@@ -25,6 +27,12 @@ public class FindStateTest extends BaseTest {
 
     @Test
     public void testFindState() throws URISyntaxException, IOException, JSONException, JoseException, MalformedClaimException, InvalidJwtException {
+        String schema = "findstate";
+        createSchema(schema);
+        Migrator.executeMigrations(dataSource(schema));
+        Jdbi jdbi = Jdbi.create(dataSource(schema));
+        var server = startServer(jdbi);
+
         String validStateString = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/state.json").toURI())));
 
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
@@ -48,11 +56,13 @@ public class FindStateTest extends BaseTest {
         JSONAssert.assertEquals(validStateString, state, false);
 
         CommonStateTest.cleanSates(jdbi);
+        server.stop();
+        deleteSchema(schema);
     }
 
     @Test
     public void testNotValidSignature() {
-
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         UUID stateId = UUID.fromString("4b8b27d3-e4f3-4a78-8822-12476582af8a");
 
@@ -68,11 +78,12 @@ public class FindStateTest extends BaseTest {
 
         Assert.assertEquals(401, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testEmptySignature() {
-
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         UUID stateId = UUID.fromString("4b8b27d3-e4f3-4a78-8822-12476582af8a");
 
@@ -87,11 +98,12 @@ public class FindStateTest extends BaseTest {
 
         Assert.assertEquals(401, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testNonPlatformKey() throws JoseException {
-
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         UUID stateId = UUID.fromString("4b8b27d3-e4f3-4a78-8822-12476582af8a");
 
@@ -106,11 +118,12 @@ public class FindStateTest extends BaseTest {
 
         Assert.assertEquals(400, response.getStatus());
         response.close();
+        server.stop();
     }
 
     @Test
     public void testNonReceiverKey() throws JoseException {
-
+        var server = startServer();
         UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
         UUID stateId = UUID.fromString("4b8b27d3-e4f3-4a78-8822-12476582af8a");
         String uri = testUrl(String.format("/states/%s/%s", tenantId.toString(), stateId.toString()));
@@ -124,5 +137,6 @@ public class FindStateTest extends BaseTest {
 
         Assert.assertEquals(400, response.getStatus());
         response.close();
+        server.stop();
     }
 }

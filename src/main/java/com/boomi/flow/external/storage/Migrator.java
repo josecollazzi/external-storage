@@ -1,15 +1,13 @@
 package com.boomi.flow.external.storage;
 
-import com.boomi.flow.external.storage.guice.HikariDataSourceProvider;
 import com.boomi.flow.external.storage.utils.Environment;
+import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
 
 import java.net.URI;
 
 public class Migrator {
-    public static void executeMigrations() {
-        var dataSource = new HikariDataSourceProvider().get();
-
+    public static void executeMigrations(HikariDataSource dataSource) {
         // Run the migrations, then destroy the single-connection pool
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

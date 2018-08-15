@@ -3,6 +3,8 @@ package com.boomi.flow.external.storage;
 import com.boomi.flow.external.storage.utils.Environment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manywho.sdk.api.jackson.ObjectMapperFactory;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.util.PortProvider;
 import org.jdbi.v3.core.Jdbi;
@@ -16,9 +18,6 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -29,23 +28,61 @@ import static org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers.AES_256_CBC_H
 import static org.jose4j.jwe.KeyManagementAlgorithmIdentifiers.ECDH_ES_A192KW;
 import static org.jose4j.jwe.KeyManagementAlgorithmIdentifiers.ECDH_ES_A256KW;
 import static org.jose4j.jws.AlgorithmIdentifiers.ECDSA_USING_P384_CURVE_AND_SHA384;
+import static org.mockito.Mockito.mock;
 
 public class BaseTest {
     protected static ObjectMapper objectMapper = ObjectMapperFactory.create();
-    protected static UndertowJaxrsServer server;
-    protected static Jdbi jdbi;
 
-    @BeforeClass
-    public static void startServer() {
-        jdbi = new JdbiTestProvider().get();
-        server = new UndertowJaxrsServer();
-        server.start();
-        server.deploy(new ApplicationTest());
+    protected HikariDataSource dataSource(String schema) {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setPassword(Environment.get("DATABASE_PASSWORD"));
+        hikariConfig.setUsername(Environment.get("DATABASE_USERNAME"));
+        hikariConfig.setJdbcUrl(Environment.get("DATABASE_URL"));
+        hikariConfig.setMaximumPoolSize(1);
+        hikariConfig.setSchema(schema);
+
+        return new HikariDataSource(hikariConfig);
     }
 
-    @AfterClass
-    public static void stopServer() {
-        server.stop();
+    protected void createSchema(String schema) {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setPassword(Environment.get("DATABASE_PASSWORD"));
+        hikariConfig.setUsername(Environment.get("DATABASE_USERNAME"));
+        hikariConfig.setJdbcUrl(Environment.get("DATABASE_URL"));
+        hikariConfig.setMaximumPoolSize(1);
+
+        HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
+        Jdbi jdbi = Jdbi.create(hikariDataSource);
+        jdbi.useHandle(handle -> handle.execute("CREATE SCHEMA IF NOT EXISTS "+ schema ));
+    }
+
+    protected void deleteSchema(String schema) {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setPassword(Environment.get("DATABASE_PASSWORD"));
+        hikariConfig.setUsername(Environment.get("DATABASE_USERNAME"));
+        hikariConfig.setJdbcUrl(Environment.get("DATABASE_URL"));
+        hikariConfig.setMaximumPoolSize(1);
+
+        HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
+        Jdbi jdbi = Jdbi.create(hikariDataSource);
+        jdbi.useHandle(handle -> handle.createUpdate("DROP SCHEMA IF EXISTS " + schema + " CASCADE"));
+    }
+
+    protected UndertowJaxrsServer startServer(Jdbi jdbi) {
+        UndertowJaxrsServer server = new UndertowJaxrsServer();
+        server.start();
+        server.deploy(new ApplicationTest(jdbi));
+
+        return server;
+    }
+
+    protected UndertowJaxrsServer startServer() {
+        Jdbi mockedJdi = mock(Jdbi.class);
+        UndertowJaxrsServer server = new UndertowJaxrsServer();
+        server.start();
+        server.deploy(new ApplicationTest(mockedJdi));
+
+        return server;
     }
 
     protected static String createRequestSignature(UUID tenant, String endpoint) throws JoseException {
@@ -87,7 +124,7 @@ public class BaseTest {
     }
 
     protected static String decryptToken(String token) throws JoseException, InvalidJwtException, MalformedClaimException {
-        PublicJsonWebKey plaformFull = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("PLATFORM_KEY"));
+        PublicJsonWebKey platformFull = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("PLATFORM_KEY"));
         PublicJsonWebKey receiverFull = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("RECEIVER_KEY"));
 
         // Create constraints for the algorithms that incoming tokens need to use, otherwise decoding will fail
@@ -100,7 +137,7 @@ public class BaseTest {
                 .setMaxFutureValidityInMinutes(300)
                 .setExpectedIssuer("receiver")
                 .setExpectedAudience("manywho")
-                .setDecryptionKey(plaformFull.getPrivateKey())
+                .setDecryptionKey(platformFull.getPrivateKey())
                 .setVerificationKey(receiverFull.getPublicKey())
                 .setJwsAlgorithmConstraints(jwsAlgorithmConstraints)
                 .setJweAlgorithmConstraints(jweAlgorithmConstraints)
