@@ -28,7 +28,8 @@ public class DeleteStateTest extends BaseTest {
     @Test
     public void testDeleteState() throws URISyntaxException, IOException, JoseException {
 
-        String schema = "deletestate";
+        String schema = attachRandomString("deletestate");
+
         createSchema(schema);
         Migrator.executeMigrations(dataSource(schema));
         Jdbi jdbi = Jdbi.create(dataSource(schema));

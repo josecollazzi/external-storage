@@ -7,6 +7,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.junit.Assert;
 import org.junit.Test;
 import javax.ws.rs.core.Response;
+import java.util.UUID;
 
 public class HealthControllerTest extends BaseTest {
     @Test

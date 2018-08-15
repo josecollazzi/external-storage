@@ -38,7 +38,7 @@ import java.util.UUID;
 public class SaveStateTest extends BaseTest {
     @Test
     public void testUpdateState() throws URISyntaxException, IOException, JoseException, JSONException {
-        String schema = "updatestate";
+        String schema = attachRandomString("updatestate");
         createSchema(schema);
         Migrator.executeMigrations(dataSource(schema));
         Jdbi jdbi = Jdbi.create(dataSource(schema));
@@ -134,7 +134,7 @@ public class SaveStateTest extends BaseTest {
 
     @Test
     public void testInsertState() throws URISyntaxException, IOException, JoseException, JSONException {
-        String schema = "insertstate";
+        String schema = attachRandomString("insertstate");
         createSchema(schema);
         Migrator.executeMigrations(dataSource(schema));
         Jdbi jdbi = Jdbi.create(dataSource(schema));

@@ -27,7 +27,7 @@ public class FindStateTest extends BaseTest {
 
     @Test
     public void testFindState() throws URISyntaxException, IOException, JSONException, JoseException, MalformedClaimException, InvalidJwtException {
-        String schema = "findstate";
+        String schema = attachRandomString("findstate");
         createSchema(schema);
         Migrator.executeMigrations(dataSource(schema));
         Jdbi jdbi = Jdbi.create(dataSource(schema));

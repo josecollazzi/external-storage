@@ -53,7 +53,7 @@ public class BaseTest {
 
         HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
         Jdbi jdbi = Jdbi.create(hikariDataSource);
-        jdbi.useHandle(handle -> handle.execute("CREATE SCHEMA IF NOT EXISTS "+ schema ));
+        jdbi.useHandle(handle -> handle.execute("CREATE SCHEMA " + schema ));
     }
 
     protected void deleteSchema(String schema) {
@@ -66,6 +66,10 @@ public class BaseTest {
         HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
         Jdbi jdbi = Jdbi.create(hikariDataSource);
         jdbi.useHandle(handle -> handle.createUpdate("DROP SCHEMA IF EXISTS " + schema + " CASCADE"));
+    }
+
+    protected String attachRandomString(String schema) {
+        return schema + "_" + UUID.randomUUID().toString().replace("-","");
     }
 
     protected UndertowJaxrsServer startServer(Jdbi jdbi) {
