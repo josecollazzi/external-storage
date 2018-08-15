@@ -3,7 +3,6 @@ package com.boomi.flow.external.storage;
 import com.boomi.flow.external.storage.utils.Environment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manywho.sdk.api.jackson.ObjectMapperFactory;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.util.PortProvider;
 import org.jdbi.v3.core.Jdbi;
@@ -20,8 +19,6 @@ import org.jose4j.lang.JoseException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
