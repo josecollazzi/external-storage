@@ -10,6 +10,7 @@ before_install:
   - sudo touch /var/run/mysqld/mysqld.sock
   - sudo chown -R mysql /var/run/mysqld
   - sudo service mysql start
+  - sudo cat /etc/mysql/my.cnf
   - mysql -e 'create database external_storage;'
 env:
   matrix:
