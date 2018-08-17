@@ -1,0 +1,1 @@
+ALTER TABLE states ADD expires_at timestamp with time zone;

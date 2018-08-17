@@ -29,9 +29,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +44,8 @@ public class SaveStateTest extends BaseTest {
 
         OffsetDateTime createdAt = OffsetDateTime.now();
         OffsetDateTime updatedAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusDays(2);
+
         String oldContent = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/state.json").toURI())));
 
         //insert an state
@@ -63,20 +63,13 @@ public class SaveStateTest extends BaseTest {
         UUID flowVersionId = UUID.fromString("f8bfd40b-8e0b-4966-884e-ed6159aec3dc");
         UUID parentId = UUID.fromString("dfcf84e6-85de-11e8-adc0-fa7ae01bbebc");
 
-        if (databaseType().equals("mysql")) {
-            // my sql doesn't save the nanoseconds, also seems to truncate with a round up or round down,
-            // I have set nano to 0 to avoid problems for now
-            createdAt = createdAt.withNano(0);
-            updatedAt = updatedAt.withNano(0);
-        }
-
         // you can find examples of the following keys at test/resources/example-key
         PublicJsonWebKey platformFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("PLATFORM_KEY"));
         PublicJsonWebKey receiverFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("RECEIVER_KEY"));
 
         // encrypt and sign body
         StateRequest[] requestList = createSignedEncryptedBody(stateId, tenantId, parentId, flowId, flowVersionId,
-                false, currentMapElementId, currentUserId, createdAt, updatedAt, content, platformFullKey, receiverFullKey);
+                false, currentMapElementId, currentUserId, createdAt, updatedAt, expiresAt, content, platformFullKey, receiverFullKey);
 
         String url = testUrl("/states/918f5a24-290e-4659-9cd6-c8d95aee92c6");
         Entity<String> entity = Entity.entity(objectMapper.writeValueAsString(requestList), MediaType.APPLICATION_JSON_TYPE);
@@ -89,7 +82,7 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(204, response.getStatus());
 
-        String sql = "SELECT id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, content " +
+        String sql = "SELECT id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, expires_at, updated_at, content " +
                 "FROM states WHERE id = :id AND tenant_id = :tenant";
 
         Optional<State> stateOptional = jdbi.withHandle(handle -> {
@@ -115,16 +108,87 @@ public class SaveStateTest extends BaseTest {
         Assert.assertEquals(currentMapElementId, stateOptional.get().getCurrentMapElementId());
 
         // todo createJdbi assertion for createAt too
-        if (databaseType().equals("mysql")) {
-            Timestamp expectedUpdatedAtWithoutTimezone = Timestamp.valueOf(updatedAt.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-            Timestamp updatedAtWithoutTimezone = Timestamp.valueOf(stateOptional.get().getUpdatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-
-            Assert.assertEquals(expectedUpdatedAtWithoutTimezone, updatedAtWithoutTimezone);
-        } else {
-            Assert.assertEquals(updatedAt, stateOptional.get().getUpdatedAt());
-        }
+        Assert.assertEquals(updatedAt, stateOptional.get().getUpdatedAt());
+        Assert.assertEquals(expiresAt, stateOptional.get().getExpiresAt());
 
         JSONAssert.assertEquals(content, stateOptional.get().getContent(), false);
+        response.close();
+
+        CommonStateTest.cleanSates(jdbi);
+        server.stop();
+        deleteSchema(schema);
+    }
+
+    /**
+     * If there is a more recent state in database so we ignore the request (the updated_at in database is newer)
+     * that the updated_at in the request
+     *
+     */
+    @Test
+    public void testNotUpdateState() throws URISyntaxException, IOException, JoseException {
+        String schema = attachRandomString("updatestate");
+        createSchema(schema);
+        Migrator.executeMigrations(dataSource(schema));
+        Jdbi jdbi = Jdbi.create(dataSource(schema));
+        var server = startServer(jdbi);
+
+        OffsetDateTime createdAt = OffsetDateTime.now();
+        // the current updated_at in database is '2018-07-17T11:32:00.7117030+01:00'
+        OffsetDateTime updatedAt = OffsetDateTime.parse("2017-07-12T11:19:52.2303514+01:00");
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusDays(2);
+
+        String oldContent = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/state.json").toURI())));
+
+        //insert an state
+        jdbi.useHandle(handle -> handle.createUpdate(CommonStateTest.insertState())
+                .bind("content", oldContent)
+                .execute());
+
+        String content = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/updated-state.json").toURI())));
+
+        UUID tenantId = UUID.fromString("918f5a24-290e-4659-9cd6-c8d95aee92c6");
+        UUID stateId = UUID.fromString("4b8b27d3-e4f3-4a78-8822-12476582af8a");
+        UUID flowId = UUID.fromString("7808267e-b09a-44b2-be2b-4216a9513b71");
+        UUID currentMapElementId = UUID.fromString("6dc7aea2-335d-40d0-ba34-4571fb135936");
+        UUID currentUserId = UUID.fromString("52df1a90-3826-4508-b7c2-cde8aa5b72cf");
+        UUID flowVersionId = UUID.fromString("f8bfd40b-8e0b-4966-884e-ed6159aec3dc");
+        UUID parentId = UUID.fromString("dfcf84e6-85de-11e8-adc0-fa7ae01bbebc");
+
+        // you can find examples of the following keys at test/resources/example-key
+        PublicJsonWebKey platformFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("PLATFORM_KEY"));
+        PublicJsonWebKey receiverFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("RECEIVER_KEY"));
+
+        // encrypt and sign body
+        StateRequest[] requestList = createSignedEncryptedBody(stateId, tenantId, parentId, flowId, flowVersionId,
+                false, currentMapElementId, currentUserId, createdAt, updatedAt, expiresAt, content, platformFullKey, receiverFullKey);
+
+        String url = testUrl("/states/918f5a24-290e-4659-9cd6-c8d95aee92c6");
+        Entity<String> entity = Entity.entity(objectMapper.writeValueAsString(requestList), MediaType.APPLICATION_JSON_TYPE);
+
+        Response response =  new ResteasyClientBuilder().build().target(url).request()
+                .header("X-ManyWho-Platform-Key-ID", "918f5a24-290e-4659-9cd6-c8d95aee92c6")
+                .header("X-ManyWho-Receiver-Key-ID", "918f5a24-290e-4659-9cd6-c8d95aee92c6")
+                .header("X-ManyWho-Signature", createRequestSignature(tenantId, url))
+                .post(entity);
+
+        Assert.assertEquals(204, response.getStatus());
+
+        String sql = "SELECT id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, expires_at, updated_at, content " +
+                "FROM states WHERE id = :id AND tenant_id = :tenant";
+
+        Optional<State> stateOptional = jdbi.withHandle(handle -> {
+            if (databaseType().equals("mysql")) {
+                handle.registerArgument(new UuidArgumentFactory());
+            }
+
+            return handle.createQuery(sql)
+                    .bind("id", stateId)
+                    .bind("tenant", tenantId)
+                    .mapToBean(State.class)
+                    .findFirst();
+        });
+
+        Assert.assertNotEquals(expiresAt, stateOptional.get().getExpiresAt());
         response.close();
 
         CommonStateTest.cleanSates(jdbi);
@@ -142,6 +206,7 @@ public class SaveStateTest extends BaseTest {
 
         OffsetDateTime createdAd = OffsetDateTime.now();
         OffsetDateTime updatedAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusDays(2);
 
         String content = new String(Files.readAllBytes(Paths.get(Resources.getResource("state/state.json").toURI())));
 
@@ -153,20 +218,14 @@ public class SaveStateTest extends BaseTest {
         UUID flowVersionId = UUID.fromString("f8bfd40b-8e0b-4966-884e-ed6159aec3dc");
         UUID parentId = UUID.fromString("dfcf84e6-85de-11e8-adc0-fa7ae01bbebc");
 
-        if (databaseType().equals("mysql")) {
-            // my sql doesn't save the nanoseconds, also seems to truncate with a round up or round down,
-            // I have set nano to 0 to avoid problems for now
-            createdAd = createdAd.withNano(0);
-            updatedAt = updatedAt.withNano(0);
-        }
-
         // you can find examples of the following keys at test/resources/example-key
         PublicJsonWebKey platformFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("PLATFORM_KEY"));
         PublicJsonWebKey receiverFullKey = PublicJsonWebKey.Factory.newPublicJwk(System.getenv("RECEIVER_KEY"));
 
         // encrypt and sign body
         StateRequest[] requestList = createSignedEncryptedBody(stateId, tenantId, parentId, flowId, flowVersionId,
-                false, currentMapElementId, currentUserId, createdAd, updatedAt, content, platformFullKey, receiverFullKey);
+                false, currentMapElementId, currentUserId, createdAd, updatedAt, expiresAt, content,
+                platformFullKey, receiverFullKey);
 
         String url = testUrl("/states/918f5a24-290e-4659-9cd6-c8d95aee92c6");
         Entity<String> entity = Entity.entity(objectMapper.writeValueAsString(requestList), MediaType.APPLICATION_JSON_TYPE);
@@ -179,9 +238,8 @@ public class SaveStateTest extends BaseTest {
 
         Assert.assertEquals(204, response.getStatus());
 
-        String sql = "SELECT id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, content " +
+        String sql = "SELECT id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, expires_at, content " +
                 "FROM states WHERE id = :id AND tenant_id = :tenant";
-
 
         Optional<State> stateOptional = jdbi.withHandle(handle -> {
             if (databaseType().equals("mysql")) {
@@ -204,20 +262,9 @@ public class SaveStateTest extends BaseTest {
         // todo fix
         // Assert.assertTrue(stateOptional.get().isDone());
         Assert.assertEquals(currentMapElementId, stateOptional.get().getCurrentMapElementId());
-
-        if (databaseType().equals("mysql")) {
-            Timestamp createdAtWithoutTimezone = Timestamp.valueOf(createdAd.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-            Timestamp updatedAtWithoutTimezone = Timestamp.valueOf(updatedAt.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-
-            Timestamp created_at = Timestamp.valueOf(stateOptional.get().getCreatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-            Timestamp updated_at = Timestamp.valueOf(stateOptional.get().getUpdatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-
-            Assert.assertEquals(createdAtWithoutTimezone, created_at);
-            Assert.assertEquals(updatedAtWithoutTimezone, updated_at);
-        } else {
-            Assert.assertEquals(createdAd, stateOptional.get().getCreatedAt());
-            Assert.assertEquals(updatedAt, stateOptional.get().getUpdatedAt());
-        }
+        Assert.assertEquals(createdAd, stateOptional.get().getCreatedAt());
+        Assert.assertEquals(updatedAt, stateOptional.get().getUpdatedAt());
+        Assert.assertEquals(expiresAt, stateOptional.get().getExpiresAt());
 
         JSONAssert.assertEquals(content, stateOptional.get().getContent(), false);
         response.close();
@@ -229,8 +276,8 @@ public class SaveStateTest extends BaseTest {
 
     private StateRequest[] createSignedEncryptedBody(UUID id, UUID tenantId, UUID parentId, UUID flowId, UUID flowVersionId,
                                                      boolean isDone, UUID currentMapElement, UUID currentUserId,
-                                                     OffsetDateTime createdAt, OffsetDateTime updatedAt, String content,
-                                                     PublicJsonWebKey platformJwk, PublicJsonWebKey receiverJwk) {
+                                                     OffsetDateTime createdAt, OffsetDateTime updatedAt, OffsetDateTime expiresAt,
+                                                     String content, PublicJsonWebKey platformJwk, PublicJsonWebKey receiverJwk) {
 
         // Create the claims, which will be the content of the JWT
         JwtClaims claims = new JwtClaims();
@@ -253,6 +300,7 @@ public class SaveStateTest extends BaseTest {
         claims.setClaim("currentUser", currentUserId);
         claims.setClaim("createdAt", createdAt);
         claims.setClaim("updatedAt", updatedAt);
+        claims.setClaim("expiresAt", expiresAt);
         claims.setClaim("content", content);
 
         // Create the signature for the actual content
@@ -382,7 +430,7 @@ public class SaveStateTest extends BaseTest {
 
         // encrypt and sign body
         StateRequest[] requestList = createSignedEncryptedBody(stateId, tenantId, parentId, flowId, flowVersionId,
-                false, currentMapElementId, currentUserId, now, now, content, platformFullKey, receiverFullKey);
+                false, currentMapElementId, currentUserId, now, now, now, content, platformFullKey, receiverFullKey);
         return Entity.entity(objectMapper.writeValueAsString(requestList), MediaType.APPLICATION_JSON_TYPE);
     }
 }

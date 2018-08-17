@@ -2,10 +2,14 @@ language: java
 jdk:
   - oraclejdk10
   - openjdk10
+services:
+  - mysql
+before_install:
+  - mysql -e 'create database external_storage;'
 env:
   matrix:
     - DATABASE_URL=$DATABASE_URL_POSTGRES DATABASE_PASSWORD=$DATABASE_PASSWORD_POSTGRES
-    - DATABASE_URL=$DATABASE_URL_MYSQL DATABASE_PASSWORD=$DATABASE_PASSWORD_MYSQL
+    - DATABASE_URL='jdbc:mysql://localhost/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD=''
     - DATABASE_URL=$DATABASE_URL_MSSQL DATABASE_PASSWORD=$DATABASE_PASSWORD_MSSQL
 cache:
   directories:

@@ -142,6 +142,7 @@ public class StateManager {
                 state.setTenantId(uuidFromNullableString(claims.getStringClaimValue("tenant")));
                 state.setToken(stateRequest.getToken());
                 state.setUpdatedAt(OffsetDateTime.parse(claims.getStringClaimValue("updatedAt")));
+                state.setExpiresAt(OffsetDateTime.parse(claims.getStringClaimValue("expiresAt")));
             } catch (MalformedClaimException e) {
                 throw new RuntimeException("Unable to load the state content from the incoming claims", e);
             }

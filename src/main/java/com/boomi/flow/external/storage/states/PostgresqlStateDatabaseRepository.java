@@ -22,11 +22,12 @@ public class PostgresqlStateDatabaseRepository extends StateDatabaseRepository {
                 .bind("content", state.getContent())
                 .bind("createdAt", state.getCreatedAt())
                 .bind("updatedAt", state.getUpdatedAt())
+                .bind("expiresAt", state.getExpiresAt())
                 .add();
     }
 
     @Override
     protected String upsertQuery() {
-        return "INSERT INTO states (id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, content) VALUES (:id, :tenant, :parent, :flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :createdAt, :updatedAt, :content::jsonb) ON CONFLICT (id) DO UPDATE SET (flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, updated_at, content) = (:flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :updatedAt, :content::jsonb) WHERE states.id = :id AND states.updated_at <= :updatedAt";
+        return "INSERT INTO states (id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, expires_at, content) VALUES (:id, :tenant, :parent, :flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :createdAt, :updatedAt, :expiresAt, :content::jsonb) ON CONFLICT (id) DO UPDATE SET (flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, updated_at, expires_at, content) = (:flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :updatedAt, :expiresAt, :content::jsonb) WHERE states.id = :id AND states.updated_at <= :updatedAt";
     }
 }

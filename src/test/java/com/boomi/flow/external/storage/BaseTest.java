@@ -53,7 +53,7 @@ public class BaseTest {
 
         HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
         Jdbi jdbi = Jdbi.create(hikariDataSource);
-        jdbi.useHandle(handle -> handle.execute("CREATE SCHEMA " + schema ));
+        jdbi.useHandle(handle -> handle.execute("CREATE SCHEMA " + schema));
     }
 
     protected void deleteSchema(String schema) {
@@ -65,7 +65,13 @@ public class BaseTest {
 
         HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
         Jdbi jdbi = Jdbi.create(hikariDataSource);
-        jdbi.useHandle(handle -> handle.createUpdate("DROP SCHEMA IF EXISTS " + schema + " CASCADE"));
+        try {
+            if ("postgresql".equals(databaseType())) {
+                jdbi.useHandle(handle -> handle.execute("DROP SCHEMA " + schema + " CASCADE"));
+            } else {
+                jdbi.useHandle(handle -> handle.execute("DROP SCHEMA " + schema ));
+            }
+        }catch (Exception e){}
     }
 
     protected String attachRandomString(String schema) {

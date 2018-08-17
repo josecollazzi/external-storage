@@ -14,6 +14,7 @@ public class State {
     private UUID currentUserId;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private OffsetDateTime expiresAt;
     private String content;
     private String token;
 
@@ -95,6 +96,14 @@ public class State {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public OffsetDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(OffsetDateTime expiresAt) {
+        this.expiresAt = expiresAt;
     }
 
     public String getContent() {

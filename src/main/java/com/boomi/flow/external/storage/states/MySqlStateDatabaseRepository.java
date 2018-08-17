@@ -24,6 +24,7 @@ public class MySqlStateDatabaseRepository extends StateDatabaseRepository {
                 .bind("content", state.getContent())
                 .bind("createdAt", state.getCreatedAt().atZoneSameInstant(ZoneOffset.UTC))
                 .bind("updatedAt", state.getUpdatedAt().atZoneSameInstant(ZoneOffset.UTC))
+                .bind("expiresAt", state.getExpiresAt().atZoneSameInstant(ZoneOffset.UTC))
                 .add();
     }
 
@@ -32,8 +33,8 @@ public class MySqlStateDatabaseRepository extends StateDatabaseRepository {
         // "on duplicate key update" with a WHERE expression is not supported in MySql
         // the column updated_at needs to be the last updated, in other case some fields can not be updated
 
-        return "INSERT INTO states (id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, content) " +
-                    "VALUES (:id, :tenant, :parent, :flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :createdAt, :updatedAt, :content) " +
+        return "INSERT INTO states (id, tenant_id, parent_id, flow_id, flow_version_id, is_done, current_map_element_id, current_user_id, created_at, updated_at, expires_at, content) " +
+                    "VALUES (:id, :tenant, :parent, :flow, :flowVersion, :isDone, :currentMapElement, :currentUser, :createdAt, :updatedAt, :expiresAt, :content) " +
                 "ON DUPLICATE KEY UPDATE " +
                     "flow_id = IF(updated_at < VALUES(updated_at), VALUES(flow_id), flow_id)," +
                     "flow_version_id = IF(updated_at < VALUES(updated_at), VALUES(flow_version_id), flow_version_id)," +
@@ -41,6 +42,7 @@ public class MySqlStateDatabaseRepository extends StateDatabaseRepository {
                     "current_map_element_id = IF(updated_at < VALUES(updated_at), VALUES(current_map_element_id), current_map_element_id)," +
                     "current_user_id= IF(updated_at < VALUES(updated_at), VALUES(current_user_id), current_user_id)," +
                     "content= IF(updated_at < VALUES(updated_at), VALUES(content), content)," +
+                    "expires_at= IF(updated_at < VALUES(updated_at), VALUES(expires_at), expires_at)," +
                     "updated_at= IF(updated_at < VALUES(updated_at), VALUES(updated_at), updated_at)";
     }
 }

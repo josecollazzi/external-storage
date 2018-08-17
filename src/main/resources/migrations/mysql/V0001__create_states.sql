@@ -8,7 +8,7 @@ create table states
   is_done boolean not null,
   current_map_element_id CHAR(36) not null,
   current_user_id CHAR(36),
-  created_at datetime not null,
-  updated_at datetime not null,
+  created_at datetime(6) not null,
+  updated_at datetime(6) not null,
   content JSON not null
 );
