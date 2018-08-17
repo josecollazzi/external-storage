@@ -6,11 +6,11 @@ before_install:
   - sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
   - sudo apt-get update
   - sudo apt-get install -y mysql-server
-  - sudo services mysql stop
+  - sudo service mysql stop
   - sudo rm /var/run/mysqld/mysqld.sock
   - sudo touch /var/run/mysqld/mysqld.sock
   - sudo chown -R mysql /var/run/mysqld
-  - sudo services mysql start
+  - sudo service mysql start
   - mysql -e 'create database external_storage;'
 env:
   matrix:
