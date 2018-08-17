@@ -1,11 +1,9 @@
 language: java
 jdk:
   - openjdk10
-services:
-  - mysql
 before_install:
   - wget -c https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
-  - dpkg -i mysql-apt-config_0.8.10-1_all.deb
+  - sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
   - apt-get update
   - apt-get install -y mysql-server
   - sudo systemctl start mysql
