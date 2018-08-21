@@ -11,7 +11,7 @@ before_install:
   - sudo mysql -u root -e 'create database external_storage;'
 env:
   matrix:
-    - DATABASE_URL='jdbc:mysql://localhost/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD=''
+    - DATABASE_URL='jdbc:mysql://127.0.0.1/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD=''
 cache:
   directories:
     - "$HOME/.m2"
