@@ -9,7 +9,6 @@ before_install:
   - sudo service mysql stop
   - sudo chmod 777 /etc/mysql/conf.d/mysql.cnf
   - sudo echo 'socket=/run/mysqld/mysqld.sock' >> /etc/mysql/conf.d/mysql.cnf
-  - sudo mkdir /run/mysqld
   - sudo touch /run/mysqld/mysqld.sock
   - sudo chmod 777 -R /run/mysqld
   - sudo service mysql start
