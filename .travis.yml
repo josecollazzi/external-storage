@@ -7,7 +7,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y mysql-server
   - sudo service mysql stop
-  - sudo chmod 777 /etc/mysql/conf.d/mysql.cnf
+  - sudo chmod 0444 /etc/mysql/conf.d/mysql.cnf
   - sudo echo 'socket=/run/mysqld/mysqld.sock' >> /etc/mysql/conf.d/mysql.cnf
   - sudo touch /run/mysqld/mysqld.sock
   - sudo chmod 0444 -R /run/mysqld
