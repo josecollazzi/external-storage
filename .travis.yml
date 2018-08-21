@@ -8,10 +8,11 @@ before_install:
   - sudo apt-get install -y mysql-server
   - sudo service mysql stop
   - sudo service mysql start
+  - ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
   - sudo mysql -u root -e 'create database external_storage;'
 env:
   matrix:
-    - DATABASE_URL='jdbc:mysql://127.0.0.1/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD=''
+    - DATABASE_URL='jdbc:mysql://127.0.0.1/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
 cache:
   directories:
     - "$HOME/.m2"
