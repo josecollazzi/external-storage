@@ -8,8 +8,7 @@ before_install:
   - sudo apt-get install -y mysql-server
   - sudo service mysql stop
   - sudo service mysql start
-  - sudo ln -s ~travis/.my.cnf /var/run/mysqld/mysqld.sock
-  - mysql -h 127.0.0.1 --protocol=tcp -e 'create database external_storage;'
+  - sudo mysql -h 127.0.0.1 --protocol=tcp -e 'create database external_storage;'
 env:
   matrix:
     - DATABASE_URL='jdbc:mysql://localhost/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD=''
