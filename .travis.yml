@@ -7,13 +7,15 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y mysql-server
   - sudo service mysql stop
-  - sudo echo 'socket=/run/mysqld/mysqld.sock' >> /etc/mysqld/conf.d/mysql.cnf
+  - sudo usermod -d /var/lib/mysql/ mysql
+  - sudo echo 'socket=/run/mysqld/mysqld.sock' >> /etc/mysql/conf.d/mysql.cnf
   - sudo mkdir /run/mysqld
   - sudo touch /run/mysqld/mysqld.sock
   - sudo chmod 777 -R /run/mysqld
   - sudo service mysql start
   - sudo mysql ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
   - sudo mysql -u root -e 'create database external_storage;'
+  - sudo service mysql restart
 env:
   matrix:
     - DATABASE_URL='jdbc:mysql://127.0.0.1/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
