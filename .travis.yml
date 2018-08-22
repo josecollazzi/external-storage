@@ -2,12 +2,12 @@ language: java
 jdk:
   - openjdk10
 before_install:
-  - sudo service start mariadb
+  - sudo systemctl start mariadb
   - sudo mysqld_safe --skip-grant-tables --skip-networking &
   - sudo mysql -u root -e 'FLUSH PRIVILEGES;'
   - ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
+  - create database external_storage;
   - exit
-  - sudo mysql -u root -e 'create database external_storage;'
   - sudo service mariadb restart
 env:
   matrix:
