@@ -13,6 +13,7 @@ service:
 
 jobs:
   include:
+    - staging: mysql
       jdk:
         - oraclejdk10
         - openjdk10
