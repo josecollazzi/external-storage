@@ -3,13 +3,14 @@ sudo: false
 jdk:
   - openjdk10
 before_install:
- - sudo docker run -d --name mysqlserver -p 3001:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8
+ - sudo service mysql stop
+ - sudo docker run -d --name mysqlserver -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8
  - sudo docker run -it --link mysqlserver:mysql --rm mysql sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD"'
  - create database external_storage;
  - exit;
 env:
   matrix:
-    - DATABASE_URL='jdbc:mysql://127.0.0.1:3001/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
+    - DATABASE_URL='jdbc:mysql://127.0.0.1:3306/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
 service:
   - docker
 cache:
