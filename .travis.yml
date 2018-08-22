@@ -13,13 +13,14 @@ service:
 
 jobs:
   include:
-    - staging: mysql
-      jdk:
-        - oraclejdk10
-        - openjdk10
-      script:
-        - sudo docker run -d --name mysqlserver -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=external_storage mysql:8
+    - staging: mysql - oraclejdk
+      jdk: oraclejdk10
       env: DATABASE_URL='jdbc:mysql://localhost/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
+    - staging: mysql - openjdk
+      jdk: openjdk10
+      env: DATABASE_URL='jdbc:mysql://localhost/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
+    script:
+      - sudo docker run -d --name mysqlserver -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=external_storage mysql:8
 cache:
   directories:
     - "$HOME/.m2"
