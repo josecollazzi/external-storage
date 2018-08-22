@@ -2,7 +2,7 @@ language: java
 jdk:
   - openjdk10
 before_install:
-  - sudo service stop mariadb
+  - sudo service start mariadb
   - sudo mysqld_safe --skip-grant-tables --skip-networking &
   - sudo mysql -u root -e 'FLUSH PRIVILEGES;'
   - ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
