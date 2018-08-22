@@ -1,5 +1,7 @@
 language: java
 sudo: false
+before_install:
+ - sudo service mysql stop
 service:
   - docker
 
