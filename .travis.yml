@@ -11,4 +11,7 @@ env:
     - DATABASE_URL='jdbc:mysql://127.0.0.1/external_storage' DATABASE_USERNAME='root' DATABASE_PASSWORD='root'
 service:
   - docker
+cache:
+  directories:
+    - "$HOME/.m2"
 
