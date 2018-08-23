@@ -3,19 +3,15 @@ sudo: false
 env:
   global:
     - PGPORT=5433
-    - PGDATABASE=external_storage
-    - PGUSER=postgres
-    - PGPASSWORD=postgres
-    - PGHOST=localhost
 jobs:
   include:
     - jdk: oraclejdk10
-      env: DATABASE_URL='jdbc:postgresql://localhost:5433/external_storage' DATABASE_USERNAME='postgres' DATABASE_PASSWORD='postgres'
+      env: DATABASE_URL='jdbc:postgresql://localhost:5433/external_storage' DATABASE_USERNAME='travis' DATABASE_PASSWORD='travis'
       before_script:
-        - psql -c "CREATE DATABASE external_storage;" -U postgres
-        - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
+        - psql -c "CREATE DATABASE external_storage;" -U travis
+        - psql -c "ALTER USER travis WITH PASSWORD 'travis';" -U travis
       addons:
-        postgresql: "10"
+        postgresql: 10
         apt:
           packages:
             - postgresql-10
