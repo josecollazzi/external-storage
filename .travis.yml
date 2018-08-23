@@ -2,7 +2,7 @@ language: java
 sudo: false
 env:
   global:
-   - PGPORT=5433
+    - PGPORT=5433
 
 jobs:
   include:
@@ -15,8 +15,8 @@ jobs:
         postgresql: "10"
         apt:
           packages:
-          - postgresql-10
-          - postgresql-client-10
+            - postgresql-10
+            - postgresql-client-10
 cache:
   directories:
     - "$HOME/.m2"
