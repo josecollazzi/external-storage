@@ -8,8 +8,8 @@ jobs:
     - jdk: oraclejdk10
       env: DATABASE_URL='jdbc:postgresql://localhost:5433/external_storage' DATABASE_USERNAME='postgres' DATABASE_PASSWORD='postgres'
       before_script:
-        - sudo su - postgres -c psql -c "CREATE DATABASE external_storage;"
-        - sudo -u travis psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+        - psql -c "CREATE DATABASE external_storage;" -U travis
+        - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U travis
 
       addons:
         postgresql: 10
