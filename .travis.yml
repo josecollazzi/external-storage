@@ -1,6 +1,8 @@
 language: java
 sudo: false
-
+env:
+  global:
+  - PGPORT=5433
 
 jobs:
   include:
@@ -9,8 +11,12 @@ jobs:
       before_script:
        - psql -c "CREATE DATABASE external_storage;" -U postgres
        - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
-      services:
-       - postgresql
+      addons:
+        postgresql: "10"
+        apt:
+          packages:
+          - postgresql-10
+          - postgresql-client-10
 cache:
   directories:
     - "$HOME/.m2"
