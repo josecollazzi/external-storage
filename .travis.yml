@@ -12,11 +12,11 @@ jobs:
         - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
 
       addons:
-        postgresql: 9.5.4
+        postgresql: 9.5.14
         apt:
           packages:
-            - postgresql-9.5.4
-            - postgresql-client-9.5.4
+            - postgresql-9.5.14
+            - postgresql-client-9.5.14
 cache:
   directories:
     - "$HOME/.m2"
