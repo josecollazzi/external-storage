@@ -2,15 +2,15 @@ language: java
 sudo: false
 env:
   global:
-    - PGPORT=5433
-
+  - PGPORT=5433
+  - PGDATABASE=external_storage
+  - PGUSER=postgres
+  - PGPASSWORD=postgres
+  - PGHOST=localhost
 jobs:
   include:
     - jdk: oraclejdk10
       env: DATABASE_URL='jdbc:postgresql://localhost:5433/external_storage' DATABASE_USERNAME='postgres' DATABASE_PASSWORD='postgres'
-      before_script:
-       - psql -c "CREATE DATABASE external_storage;" -U postgres
-       - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
       addons:
         postgresql: "10"
         apt:
