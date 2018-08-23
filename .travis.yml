@@ -1,6 +1,7 @@
 language: java
 sudo: false
 
+
 jobs:
   include:
     - jdk: oraclejdk10
@@ -8,6 +9,8 @@ jobs:
       before_script:
        - psql -c "CREATE DATABASE external_storage;" -U postgres
        - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
+      services:
+       - postgresql
 cache:
   directories:
     - "$HOME/.m2"
