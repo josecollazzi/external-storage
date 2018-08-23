@@ -2,11 +2,11 @@ language: java
 sudo: false
 env:
   global:
-  - PGPORT=5433
-  - PGDATABASE=external_storage
-  - PGUSER=postgres
-  - PGPASSWORD=postgres
-  - PGHOST=localhost
+    - PGPORT=5433
+    - PGDATABASE=external_storage
+    - PGUSER=postgres
+    - PGPASSWORD=postgres
+    - PGHOST=localhost
 jobs:
   include:
     - jdk: oraclejdk10
