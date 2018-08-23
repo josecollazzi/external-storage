@@ -10,6 +10,7 @@ jobs:
       before_script:
         - psql -c "CREATE DATABASE external_storage;" -U travis
         - psql -c "ALTER USER travis WITH PASSWORD 'travis';" -U travis
+        - sudo service posgresql restart
       addons:
         postgresql: 10
         apt:
