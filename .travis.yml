@@ -1,6 +1,10 @@
 language: java
 services: docker
 before_install: sudo service mysql stop
+env:
+  global:
+    - PLATFORM_KEY='{"kty":"EC","kid":"918f5a24-290e-4659-9cd6-c8d95aee92c6","x":"4uV_ZyVYrm6QV1p7OPg-3BtOvoc_Pc6WGU8Rw4YT4MICzszxNqXCAoIT2iwOWiFO","y":"a_JUmWGAtF-xAlCLUZHmrNzsjpwLe3H4onDj6m3hKCmYRu7JIP5pNLecaw2lggcS","crv":"P-384","d":"1zK95W1S7WgHd62sr7MsN8mwmMgsVtj4jBGYgtnvMHAY7iiWUSIdtyjmCfgHGML_"}'
+    - RECEIVER_KEY ='{"kty":"EC","kid":"918f5a24-290e-4659-9cd6-c8d95aee92c6","x":"Sw9dXf0VErH_kaP7wWqsy1Iy4ahIwRDWKBG4sHtl-2Rmy4NrFpttFAK2Akcj__Gg","y":"TJAzD-yQqdvNyFTpkm6f-NC_QIz71MSeeMWOcYwKC-SBkmsI4ixNCmK6LSefq7Gs","crv":"P-384","d":"vGy3w59unwLxuWSE82ApKgJmmOSDfb-5jUQ-bRwx-7-3VXE43a0t1RJtyp8XwcZe"}'
 jobs:
   include:
     - jdk: oraclejdk10
