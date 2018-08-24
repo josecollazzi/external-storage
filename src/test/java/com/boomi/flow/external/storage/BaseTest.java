@@ -1,11 +1,16 @@
 package com.boomi.flow.external.storage;
 
+import com.boomi.flow.external.storage.guice.HikariDataSourceProvider;
+import com.boomi.flow.external.storage.guice.StateRepositoryProvider;
+import com.boomi.flow.external.storage.keys.KeyRepository;
+import com.boomi.flow.external.storage.keys.KeyRepositoryProvider;
+import com.boomi.flow.external.storage.states.StateRepository;
 import com.boomi.flow.external.storage.utils.Environment;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.AbstractModule;
 import com.manywho.sdk.api.jackson.ObjectMapperFactory;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.util.PortProvider;
 import org.jdbi.v3.core.Jdbi;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -18,6 +23,8 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
+
+import javax.inject.Singleton;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -78,19 +85,50 @@ public class BaseTest {
         return schema + "_" + UUID.randomUUID().toString().replace("-","");
     }
 
-    protected UndertowJaxrsServer startServer(Jdbi jdbi) {
-        UndertowJaxrsServer server = new UndertowJaxrsServer();
-        server.start();
-        server.deploy(new ApplicationTest(jdbi));
+    protected StoppableUndertowServer startServer(Jdbi jdbi) {
+        var dataSource = new HikariDataSourceProvider().get();
+        Migrator.executeMigrations(dataSource);
+
+        StoppableUndertowServer server = new StoppableUndertowServer();
+        server.addModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Jdbi.class).toInstance(jdbi);
+                bind(KeyRepository.class).toProvider(KeyRepositoryProvider.class).in(Singleton.class);
+                bind(StateRepository.class).toProvider(StateRepositoryProvider.class).in(Singleton.class);
+            }
+        });
+        server.setApplication(Application.class);
+        try {
+            server.start("/api/storage/1", 8080);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return server;
     }
 
-    protected UndertowJaxrsServer startServer() {
+    /**
+     * start the server without database speed up the tests
+     */
+    protected StoppableUndertowServer startServer() {
         Jdbi mockedJdi = mock(Jdbi.class);
-        UndertowJaxrsServer server = new UndertowJaxrsServer();
-        server.start();
-        server.deploy(new ApplicationTest(mockedJdi));
+        StoppableUndertowServer server = new StoppableUndertowServer();
+        server.addModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Jdbi.class).toInstance(mockedJdi);
+                bind(KeyRepository.class).toProvider(KeyRepositoryProvider.class).in(Singleton.class);
+                bind(StateRepository.class).toProvider(StateRepositoryProvider.class).in(Singleton.class);
+            }
+        });
+        server.setApplication(Application.class);
+
+        try {
+            server.start("/api/storage/1", 8080);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return server;
     }
@@ -161,7 +199,7 @@ public class BaseTest {
     }
 
     protected static String testUrl(String path) {
-        return String.format("http://%s:%d%s", PortProvider.getHost(), PortProvider.getPort(), path);
+        return String.format("http://%s:%d/api/storage/1%s", PortProvider.getHost(), 8080, path);
     }
 
     public static String databaseType() {

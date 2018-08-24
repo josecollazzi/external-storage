@@ -7,16 +7,8 @@ jobs:
   include:
     - jdk: oraclejdk10
       env: DATABASE_URL='jdbc:postgresql://localhost:5433/external_storage' DATABASE_USERNAME='postgres' DATABASE_PASSWORD='postgres'
-      before_script:
-        - psql -c "CREATE DATABASE external_storage;" -U postgres
-        - psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" -U postgres
+      script: sudo docker run --name postgresserver -p 5433:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=external_storage -d postgres:9.6
 
-      addons:
-        postgresql: 9.5.14
-        apt:
-          packages:
-            - postgresql-9.5.14
-            - postgresql-client-9.5.14
 cache:
   directories:
     - "$HOME/.m2"

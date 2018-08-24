@@ -11,6 +11,8 @@
     <properties>
         <maven.compiler.source>10</maven.compiler.source>
         <maven.compiler.target>10</maven.compiler.target>
+        <version.resteasy>3.5.1.Final</version.resteasy>
+        <version.manywho.sdk>2.0.0-beta-07</version.manywho.sdk>
     </properties>
 
     <dependencyManagement>
@@ -29,8 +31,14 @@
         <dependency>
             <groupId>com.manywho.sdk</groupId>
             <artifactId>sdk-server-undertow</artifactId>
-            <version>2.0.0-beta-07</version>
+            <version>${version.manywho.sdk}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>${version.resteasy}</version>
+        </dependency>
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -91,21 +99,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.manywho.sdk</groupId>
-            <artifactId>sdk-server-servlet3</artifactId>
-            <version>2.0.0-beta-01</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
             <version>1.5.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-client</artifactId>
-            <version>3.1.4.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
