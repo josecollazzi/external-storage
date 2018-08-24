@@ -1,8 +1,5 @@
 language: java
 sudo: false
-env:
-  global:
-    - PGPORT=5433
 jobs:
   include:
     - jdk: oraclejdk10
